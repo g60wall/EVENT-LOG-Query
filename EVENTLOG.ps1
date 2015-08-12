@@ -11,7 +11,8 @@ Last 7 Days EVENT LOG ERRORS
 </title>
 "@
 $pre = "Last 7 days"
+$servers = 'pdc','mail','sql','dcx','clusternode3','vhdx'
 
-get-EventLog -ComputerName pdc,dcx,sql,mail -LogName System -EntryType error -after ((get-date).date.AddDays(-7)) | Group-Object eventid, MachineName, Message |select Count,Name| sort count -Descending | ConvertTo-Html -Head $Header | Out-File \\nas\it\james\OUTFILE\testoutput.html
-
+$winEventErrors = Invoke-Command -ComputerName $Servers -ScriptBlock {$startDate = (Get-date).AddDays(-7); try{Get-WinEvent -FilterHashtable @{LogName="System";StartTime=$startDate;Level=2} -ErrorAction STOP}catch{Write-Warning -Message ('{0}->{1}' -f $env:ComputerName,$_.exception.message)} }
+$winEventErrors | Group-Object -Property Id,MachineName,message | select @{n='ComputerName';e={ $_.Name.split(',')[1].trim() }},@{n='EventId';e={ $_.Name.split(',')[0].Trim()}},@{n='Message';e={ $_.Name.split(',')[2].trim() }},Count | sort count -Descending | ConvertTo-Html -Head $Header -precontent $pre | Out-File \\nas\it\james\OUTFILE\DomainHealth.html
 
