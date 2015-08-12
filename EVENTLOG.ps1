@@ -1,4 +1,6 @@
-﻿$Header = @"
+
+## Defines HTML layout
+$Header = @"
 <style>
 TABLE {border-width: 1px;border-style: solid;border-color: black;border-collapse: collapse;}
 TH {border-width: 1px;padding: 3px;border-style: solid;border-color: black;background-color: #6495ED;}
@@ -10,8 +12,10 @@ TR:Hover TD {Background-Color: #C1D5F8;}
 Last 7 Days EVENT LOG ERRORS
 </title>
 "@
+## Sets Title of web page
 $pre = "Last 7 days"
-$servers = 'pdc','mail','sql','dcx','clusternode3','vhdx'
+ ## Input your Server Name to replace server1, etc...
+$servers = 'server1','server2','server3' 
 
 $winEventErrors = Invoke-Command -ComputerName $Servers -ScriptBlock {$startDate = (Get-date).AddDays(-7); try{Get-WinEvent -FilterHashtable @{LogName="System";StartTime=$startDate;Level=2} -ErrorAction STOP}catch{Write-Warning -Message ('{0}->{1}' -f $env:ComputerName,$_.exception.message)} }
 $winEventErrors | Group-Object -Property Id,MachineName,message | select @{n='ComputerName';e={ $_.Name.split(',')[1].trim() }},@{n='EventId';e={ $_.Name.split(',')[0].Trim()}},@{n='Message';e={ $_.Name.split(',')[2].trim() }},Count | sort count -Descending | ConvertTo-Html -Head $Header -precontent $pre | Out-File \\nas\it\james\OUTFILE\DomainHealth.html
